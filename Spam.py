@@ -1,26 +1,39 @@
-#Библиотеки
 import keyboard
 import time
 import random
 
-print("Переключитесь на нужное окно. Отправка начнется через 5 секунд.")
-#Через сколько он начнет спам
-time.sleep(5)
+def start_spam(message, random_messages, count, delay, stop_event, status_callback):
+    """
+    Основная функция для отправки сообщений.
+    :param message: Основной текст сообщения.
+    :param random_messages: Список случайных слов для добавления.
+    :param count: Количество сообщений для отправки.
+    :param delay: Задержка между сообщениями в секундах.
+    :param stop_event: threading.Event для прерывания цикла.
+    :param status_callback: Функция для отправки обновлений статуса в GUI.
+    """
+    status_callback("Переключитесь на нужное окно. Отправка начнется через 5 секунд.")
+    time.sleep(5)
 
-# Текст, который будет отравляться
-message = ("Сообщение")
-#Случайные слова
-random_message = ("1 вариант","2 вариант","3 вариант") #Что бы добавить больше сообщений просто
-                                                        # сделай CTRL + C, CTRL +V одного из вариантов
-                                                        #и про запятую не забудь
+    if stop_event.is_set():
+        status_callback("Отправка отменена до начала.")
+        return
 
-# Сам скрипт отправки
-for i in range(5): #Количество
-    keyboard.write(message)
-    time.sleep(0.5)
-    keyboard.write(random.choice(random_message)) # Скрипт случайных слов
-    time.sleep(0.5)
-    keyboard.press_and_release('enter')
-    # Пауза перед отправкой следующего сообщения
-    time.sleep(0.1)
-print("Скрипт завершил работу.")
+    for i in range(count):
+        if stop_event.is_set():
+            status_callback(f"Отправка остановлена. Отправлено {i} из {count}.")
+            return
+
+        status_callback(f"Отправка сообщения {i + 1} из {count}...")
+        # пишем основное сообщение
+        keyboard.write(message)
+
+        # если есть случайные слова — добавляем
+        if random_messages:
+            random_word = random.choice(random_messages)
+            keyboard.write(" " + random_word)
+
+        keyboard.press_and_release("enter")
+        time.sleep(delay) # Пауза между сообщениями
+
+    status_callback(f"Готово! Отправлено {count} сообщений.")
